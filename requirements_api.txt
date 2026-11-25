@@ -1,0 +1,11 @@
+flask>=3.0.0
+google-auth
+# Core copycat deps (also declared in py/requirements.txt):
+numpy
+pandas>=2.1.0
+google-cloud-aiplatform
+scikit-learn
+pydantic>=2.0.0
+tenacity
+tqdm
+bs4

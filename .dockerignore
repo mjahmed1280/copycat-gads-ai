@@ -1,0 +1,16 @@
+.git
+.github
+.claude
+.vscode
+**/__pycache__
+**/*.egg-info
+private
+*.ipynb
+/*.png
+/*.csv
+*.md
+images
+google_ads_scripts
+copycat_model.json
+convert_csv.py
+**/*_test.py

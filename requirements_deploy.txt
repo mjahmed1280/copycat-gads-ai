@@ -1,0 +1,4 @@
+-r requirements_api.txt
+streamlit>=1.40
+requests
+gunicorn

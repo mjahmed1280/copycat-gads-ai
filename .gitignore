@@ -1,0 +1,54 @@
+# Python artifacts
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environments
+.venv/
+venv/
+ENV/
+env/
+
+# Distribution / packaging
+build/
+dist/
+.eggs/
+*.egg-info/
+pip-wheel-metadata/
+
+# Test output
+.coverage
+.pytest_cache/
+.tox/
+.nox/
+
+# Notebook checkpoints
+.ipynb_checkpoints/
+
+# Local settings
+.vscode/
+.idea/
+.claude/
+
+# Google auth / credentials
+credentials.json
+*.credentials.json
+*service-account*.json
+*google-auth*.json
+*.key
+*.pem
+*.p12
+*.jwk
+
+# Misc
+.DS_Store
+Thumbs.db
+
+# --- Private / client material: never publish ---
+/private/
+/models/
+/copycat_model.json
+/*.csv
+.env
+.env.*
+*.log
