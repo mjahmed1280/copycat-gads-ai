@@ -4,7 +4,7 @@
 .vscode
 **/__pycache__
 **/*.egg-info
-ICICI Data
+private
 *.ipynb
 /*.png
 /*.csv
