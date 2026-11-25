@@ -143,6 +143,8 @@ with st.sidebar:
         st.caption(
             "Go to the Train tab first."
         )
+    if health and health.get("project"):
+        st.caption(f"Vertex project: `{health['project']}`")
     if st.button("Refresh", use_container_width=True):
         st.rerun()
 

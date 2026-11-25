@@ -19,6 +19,7 @@ import enum
 import functools
 import json
 import logging
+import os
 import re
 from typing import Any, AsyncIterable, Coroutine, Hashable, TypeVar
 
@@ -38,6 +39,77 @@ from copycat import google_ads
 
 LOGGER = logging.getLogger(__name__)
 LOGGER.setLevel(logging.INFO)
+
+
+class _LocationGenerativeModel(generative_models.GenerativeModel):
+  """GenerativeModel whose API clients target an explicit endpoint.
+
+  The Vertex SDK builds the API host as "<location>-aiplatform.googleapis.com",
+  which does not exist for location "global" (where newer Gemini models live),
+  while embedding models are only served from regions. Giving the model its own
+  clients lets Gemini use "global" without changing the SDK-wide location, so
+  embeddings keep working. Overrides the SDK's cached client properties.
+  """
+
+  _api_endpoint: str = ""
+
+  def _client_options(self):
+    from google.api_core import client_options  # pylint: disable=g-import-not-at-top
+
+    return client_options.ClientOptions(api_endpoint=self._api_endpoint)
+
+  def _credentials(self):
+    from google.cloud.aiplatform import initializer  # pylint: disable=g-import-not-at-top
+
+    return initializer.global_config.credentials
+
+  @functools.cached_property
+  def _prediction_client(self):
+    from google.cloud.aiplatform_v1.services import prediction_service  # pylint: disable=g-import-not-at-top
+
+    return prediction_service.PredictionServiceClient(
+        credentials=self._credentials(), client_options=self._client_options()
+    )
+
+  @functools.cached_property
+  def _prediction_async_client(self):
+    from google.cloud.aiplatform_v1.services import prediction_service  # pylint: disable=g-import-not-at-top
+
+    return prediction_service.PredictionServiceAsyncClient(
+        credentials=self._credentials(), client_options=self._client_options()
+    )
+
+
+def create_gemini_model(model_name: str, **kwargs: Any):
+  """Creates a Gemini GenerativeModel, honouring $GEMINI_LOCATION.
+
+  Args:
+    model_name: The Gemini model id, e.g. "gemini-3.8-flash".
+    **kwargs: Passed to GenerativeModel.
+
+  Returns:
+    A GenerativeModel. If GEMINI_LOCATION is unset it is the plain SDK model
+    (uses the location given to vertexai.init). Otherwise it calls Gemini in
+    that location ("global" or a region) while embeddings stay regional.
+  """
+  location = os.environ.get("GEMINI_LOCATION", "").strip()
+  if not location:
+    return generative_models.GenerativeModel(model_name=model_name, **kwargs)
+
+  from google.cloud.aiplatform import initializer  # pylint: disable=g-import-not-at-top
+
+  project = initializer.global_config.project
+  resource_name = (
+      f"projects/{project}/locations/{location}/publishers/google/models/"
+      f"{model_name}"
+  )
+  model = _LocationGenerativeModel(model_name=resource_name, **kwargs)
+  model._api_endpoint = (  # pylint: disable=protected-access
+      "aiplatform.googleapis.com"
+      if location == "global"
+      else f"{location}-aiplatform.googleapis.com"
+  )
+  return model
 
 
 # Text embedding models are limited to 2048 tokens. See:
@@ -1042,7 +1114,7 @@ def async_generate_google_ad_json(
   LOGGER.debug("System instruction: %s", request.system_instruction)
   LOGGER.debug("Prompt: %s", request.prompt)
 
-  model = generative_models.GenerativeModel(
+  model = create_gemini_model(
       model_name=request.chat_model_name.value,
       generation_config=generation_config,
       system_instruction=request.system_instruction,

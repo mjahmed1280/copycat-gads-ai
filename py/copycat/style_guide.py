@@ -184,7 +184,7 @@ class StyleGuideGenerator:
         },
         ad_copy_vectorstore=ad_copy_vectorstore,
     )
-    model = generative_models.GenerativeModel(
+    model = ad_copy_generator.create_gemini_model(
         model_name=model_name.value, safety_settings=safety_settings
     )
     response = model.generate_content(

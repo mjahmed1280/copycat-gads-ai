@@ -10,7 +10,8 @@ Prerequisites:
   - pip install -e ./py          # installs the copycat package from this repo
   - Set GOOGLE_CLOUD_PROJECT env var (fixed per deployment; the UI no longer asks
     for it), or pass gcp_project in a request body
-  - GCP_LOCATION (default us-central1) sets the Vertex AI region
+  - GCP_LOCATION (default us-central1) sets the region for embeddings; GEMINI_LOCATION
+    (default global) sets where Gemini is called
   - COPYCAT_MODEL_FILE sets where the trained model is stored (mount a bucket
     there on Cloud Run so it survives restarts)
 
@@ -46,6 +47,9 @@ from copycat.data import utils as data_utils
 # Gemini model ids. Google retires models (2.5 went on 2026-10-20), so keep these configurable.
 GENERATION_MODEL = os.environ.get("GENERATION_MODEL", ModelName.GEMINI_3_8_FLASH.value)
 STYLE_GUIDE_MODEL = os.environ.get("STYLE_GUIDE_MODEL", ModelName.GEMINI_3_8_FLASH.value)
+# Newer Gemini models are served from the "global" location, but embeddings are only
+# regional (GCP_LOCATION). Gemini calls go to GEMINI_LOCATION; set it to a region to override.
+os.environ.setdefault("GEMINI_LOCATION", "global")
 MODEL_FILE = Path(os.environ.get("COPYCAT_MODEL_FILE", "copycat_model.json"))
 
 logging.basicConfig(
@@ -82,6 +86,13 @@ def _resolve_project(body: dict) -> str:
             "variable or pass 'gcp_project' in the request body."
         )
     return project
+
+
+def _safe_project() -> str | None:
+    try:
+        return _resolve_project({})
+    except Exception:  # pylint: disable=broad-except
+        return None
 
 
 def _init_vertex(body: dict) -> None:
@@ -151,6 +162,7 @@ def health():
         "status": "ok",
         "model_loaded": _copycat_instance is not None,
         "model_file": str(MODEL_FILE),
+        "project": _safe_project(),
         "n_exemplars": (
             _copycat_instance.ad_copy_vectorstore.n_exemplars
             if _copycat_instance
