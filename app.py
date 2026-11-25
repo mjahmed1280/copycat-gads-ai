@@ -43,6 +43,9 @@ from copycat.data import utils as data_utils
 # Config
 # ---------------------------------------------------------------------------
 
+# Gemini model ids. Google retires models (2.5 went on 2026-10-20), so keep these configurable.
+GENERATION_MODEL = os.environ.get("GENERATION_MODEL", ModelName.GEMINI_3_8_FLASH.value)
+STYLE_GUIDE_MODEL = os.environ.get("STYLE_GUIDE_MODEL", ModelName.GEMINI_3_8_FLASH.value)
 MODEL_FILE = Path(os.environ.get("COPYCAT_MODEL_FILE", "copycat_model.json"))
 
 logging.basicConfig(
@@ -274,7 +277,7 @@ def style_guide():
       gcp_project                     str
       gcp_location                    str    Default: us-central1
       additional_style_instructions   str
-      model_name                      str    Default: gemini-3.5-flash
+      model_name                      str    Default: $GENERATION_MODEL / $STYLE_GUIDE_MODEL (gemini-3.8-flash)
       temperature                     float  Default: 0.95
       top_k                           int    Default: 40
       top_p                           float  Default: 0.95
@@ -302,7 +305,7 @@ def style_guide():
             additional_style_instructions=body.get(
                 "additional_style_instructions", ""
             ),
-            model_name=body.get("model_name", ModelName.GEMINI_2_5_PRO.value),
+            model_name=body.get("model_name") or STYLE_GUIDE_MODEL,
             safety_settings=ALL_SAFETY_SETTINGS_ONLY_HIGH,
             temperature=float(body.get("temperature", 0.95)),
             top_k=int(body.get("top_k", 40)),
@@ -354,7 +357,7 @@ def generate():
       gcp_project                     str
       gcp_location                    str    Default: us-central1
       keywords_specific_instructions  list[str]  Per-keyword extra context (simple format only).
-      model_name                      str    Default: gemini-3.5-flash
+      model_name                      str    Default: $GENERATION_MODEL / $STYLE_GUIDE_MODEL (gemini-3.8-flash)
       temperature                     float  Default: 0.95
       top_k                           int    Default: 40
       top_p                           float  Default: 0.95
@@ -384,7 +387,7 @@ def generate():
             company_name=body.get("company_name", "the advertiser"),
             language=body.get("language", "English"),
         ),
-        model_name=body.get("model_name", ModelName.GEMINI_2_5_FLASH.value),
+        model_name=body.get("model_name") or GENERATION_MODEL,
         temperature=float(body.get("temperature", 0.95)),
         top_k=int(body.get("top_k", 40)),
         top_p=float(body.get("top_p", 0.95)),

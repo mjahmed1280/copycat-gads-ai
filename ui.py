@@ -12,6 +12,7 @@ Environment:
     APP_USERS_JSON  {"email": "password", ...}  (Secret Manager: pmax-app-users)
     ADMIN_EMAILS    comma-separated emails that may Train / write the Style Guide
     COMPANY_NAME    default advertiser name (e.g. "Acme Paints")
+    GENERATION_MODEL / STYLE_GUIDE_MODEL   Gemini ids (default gemini-3.8-flash)
     API_URL         Flask API base URL (default http://127.0.0.1:5000)
 """
 
@@ -27,6 +28,8 @@ import streamlit as st
 API_URL = os.environ.get("API_URL", "http://127.0.0.1:5000")
 AUTH_MODE = os.environ.get("AUTH_MODE", "none").lower()
 DEFAULT_COMPANY = os.environ.get("COMPANY_NAME", "")
+GENERATION_MODEL = os.environ.get("GENERATION_MODEL", "gemini-3.8-flash")
+STYLE_GUIDE_MODEL = os.environ.get("STYLE_GUIDE_MODEL", "gemini-3.8-flash")
 ADMIN_EMAILS = {
     e.strip().lower() for e in os.environ.get("ADMIN_EMAILS", "").split(",") if e.strip()
 }
@@ -122,6 +125,11 @@ with st.sidebar:
             "Italian", "Portuguese", "Dutch",
         ],
     )
+
+    with st.expander("Model settings"):
+        st.caption("Gemini model ids. Change if Google retires one.")
+        generation_model = st.text_input("Generation model", value=GENERATION_MODEL)
+        style_guide_model = st.text_input("Style guide model", value=STYLE_GUIDE_MODEL)
 
     st.divider()
     st.subheader("Model status")
@@ -231,7 +239,7 @@ with tab_train:
 with tab_style:
     st.header("Style Guide")
     st.markdown(
-        "Gemini 2.5 Pro reads your exemplar ads and writes brand copy guidelines. "
+        "Gemini reads your exemplar ads and writes brand copy guidelines. "
         "The guide is stored in the model and used automatically during generation."
     )
 
@@ -255,6 +263,7 @@ with tab_style:
                 "company_name": company_name,
             "additional_style_instructions": additional_instructions,
             "use_exemplar_ads": use_exemplar_ads,
+            "model_name": style_guide_model,
         }
         with st.spinner("Generating style guide…"):
             try:
@@ -362,6 +371,7 @@ with tab_generate:
             **payload_keywords,
             "company_name": company_name,
             "language": language,
+            "model_name": generation_model,
             "use_style_guide": use_style_guide,
             "num_in_context_examples": int(num_examples),
             "temperature": float(temperature),

@@ -88,6 +88,19 @@ class ModelName(enum.Enum):
   GEMINI_2_5_PRO = "gemini-2.5-pro"
   GEMINI_2_5_FLASH = "gemini-2.5-flash"
   GEMINI_3_5_FLASH = "gemini-3.5-flash"
+  GEMINI_3_5_FLASH_LITE = "gemini-3.5-flash-lite"
+  GEMINI_3_8_FLASH = "gemini-3.8-flash"
+  GEMINI_4_ARGON = "gemini-4-argon"
+
+  @classmethod
+  def _missing_(cls, value):
+    """Accept any other Gemini model id (new releases / retirements)."""
+    if isinstance(value, str) and value.startswith("gemini-"):
+      member = object.__new__(cls)
+      member._name_ = value.upper().replace("-", "_").replace(".", "_")
+      member._value_ = value
+      return member
+    return None
 
 
 class EmbeddingModelName(enum.Enum):

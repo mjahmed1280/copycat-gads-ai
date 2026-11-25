@@ -138,7 +138,7 @@ class StyleGuideGenerator:
       brand_name: str = "",
       ad_copy_vectorstore: ad_copy_generator.AdCopyVectorstore | None = None,
       additional_style_instructions: str = "",
-      model_name: str | ModelName = ModelName.GEMINI_2_5_PRO,
+      model_name: str | ModelName = ModelName.GEMINI_3_8_FLASH,
       safety_settings: SafetySettingsType | None = None,
       temperature: float = 0.95,
       top_k: int = 20,
